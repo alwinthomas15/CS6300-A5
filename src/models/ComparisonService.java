@@ -168,16 +168,9 @@ public class ComparisonService {
         // You can interact with the user to gather job offer details
         // Create a new models.JobOffer object and add it to the jobOffers list
         JobOffer jobOffer = jobDetailsPrompt();
-        System.out.print("Do you want to save this job offer? (Enter 'Yes' or 'No'): ");
-        String choice = scanner.nextLine();
-        String val = scanner.nextLine();
 
-        if (val.toLowerCase().equals("yes") || val.toLowerCase().equals("y")) {
-            this.jobOffers.add(jobOffer);
-            System.out.println("Job offer added successfully.");
-        } else {
-            System.out.println("Job offer has not been saved.");
-        }
+        //perhaps make this a boolean? to see if the user saved it or not, so the user can compare this SPECIFIC one with a specific ONE from the list of the arrayList
+        persistJobOffer(saveOrCancelPrompt(),jobOffer);
 
         // Next steps
         System.out.println("\nOptions (Enter a number):");
@@ -200,8 +193,9 @@ public class ComparisonService {
                 break;
             case 4:
                 System.out.println("System Ends!");
-//                scanner.close();
-                System.exit(0);
+                //TODO: Not sure?
+                //scanner.close();
+                //System.exit(0);
                 break;
             default:
                 System.out.println("Invalid choice. Please try again.");
@@ -211,13 +205,9 @@ public class ComparisonService {
 
 
 
-
-
     public void adjustComparisonSettings() {
         // Logic to adjust comparison settings
         // You can interact with the user to adjust weights in the models.ComparisonSettings object
-        Scanner scanner = new Scanner(System.in);
-
 //         Gather comparison settings from the user
         System.out.print("Enter yearly salary weight: ");
         int yearlySalaryWeight = Integer.valueOf(scanner.nextLine());
