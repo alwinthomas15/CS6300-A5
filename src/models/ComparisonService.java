@@ -1,16 +1,13 @@
 package models;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
 
 public class ComparisonService {
 
     private List<JobOffer> jobOffers;
     private List<JobComparisonResults> comparisonResults;
     private ComparisonSettings comparisonSettings;
-
+    private JobOffer currentJob;
     private Scanner scanner;
 
     public ComparisonService() {
@@ -27,12 +24,13 @@ public class ComparisonService {
     public void showMainMenu() {
         while (true) {
             System.out.println("\nMain Menu:");
-            System.out.println("1. Enter or Edit Job Details");
+            System.out.println("1. Enter or edit current Job Details");
             System.out.println("2. Enter Job Offer");
             System.out.println("3. Adjust Comparison Settings");
             System.out.println("4. Compare Job Offers");
             System.out.println("5. View Saved Job Offers");
-            System.out.println("6. Exit");
+            System.out.println("6. View current Job Offer");
+            System.out.println("7. Exit");
             System.out.print("Enter: ");
 
             int choice = Integer.valueOf(scanner.nextLine());
@@ -53,6 +51,9 @@ public class ComparisonService {
                     viewSavedJobOffers();
                     break;
                 case 6:
+                    viewCurrentJobOffer();
+                    break;
+                case 7:
                     System.out.println("Goodbye!");
                     scanner.close();
                     System.exit(0);
@@ -63,43 +64,39 @@ public class ComparisonService {
     }
 
     public void enterOrEditJobDetails() {
-        // Create JobDetails and JobOffer objects
-        if(!this.jobOffers.isEmpty()) {
-            JobOffer editJobOffer = null;
-            //Display existing Job offers and let users select a specific offer to edit the details
-            this.jobOffers.stream().forEach(JobOffer::printOffer);
+
+        if (Objects.nonNull(this.currentJob)) {
+            //Print current job
+            this.currentJob.printOffer();
             System.out.println("=============================");
-            System.out.println("Enter 0 to return to main menu");
-            System.out.println("Enter the ID of the Job Offer to edit it further: ");
+            System.out.println("Enter 1 to edit the current job");
+            System.out.println("Enter 2 to return to main menu");
             System.out.print("Enter: ");
             int choice = Integer.valueOf(scanner.nextLine());
 
-            Optional<JobOffer> result = this.jobOffers.stream()
-                    .filter(jobOffer -> jobOffer.getId()==choice)
-                    .findFirst();
-
-            if(result.isPresent()) {
-                editJobOffer = result.get();
-
-                System.out.println(" The job offer you selected is: ");
-                editJobOffer.printOffer();
-                System.out.println("=======================");
-                System.out.println("Enter new details for the Job Id of: " + editJobOffer.getId());
-
-                JobOffer newJobOffer = jobDetailsPrompt();
-                newJobOffer.setId(choice);
-                persistJobOffer(saveOrCancelPrompt(),newJobOffer);
-            } else {
-                System.out.println("The Job Offer for Id: " + choice + " cannot be found in the database!");
+            switch (choice) {
+                case 1:
+                    editCurrentJob();
+                    break;
+                case 2:
+                    showMainMenu();
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
             }
-
-        }
-        else {
+        } else {
             //Prompt users to enter new job details of an offer
-            System.out.println("There are no job offers present, please enter details for the job!");
+            System.out.println("There is no current job saved. Please enter details for your current job!");
             JobOffer jobOffer = jobDetailsPrompt();
-            persistJobOffer(saveOrCancelPrompt(),jobOffer);
+            jobOffer.setId(0);
+            persistJobOffer(saveOrCancelPrompt(), jobOffer, true);
         }
+    }
+
+    public void editCurrentJob() {
+        JobOffer editedCurrentJob = jobDetailsPrompt();
+        editedCurrentJob.setId(0);
+        this.currentJob = editedCurrentJob;
     }
 
     public JobOffer jobDetailsPrompt() {
@@ -131,7 +128,7 @@ public class ComparisonService {
                 .orElse(1);
 
 
-        JobOffer currentJobOffer = new JobOffer(count,jobDetails);
+        JobOffer currentJobOffer = new JobOffer(count + 1, jobDetails);
 
         return currentJobOffer;
     }
@@ -142,23 +139,28 @@ public class ComparisonService {
 
     }
 
-    public void persistJobOffer(String val, JobOffer jobOffer) {
-        if (val.toLowerCase().equals("yes") || val.toLowerCase().equals("y")) {
-            this.jobOffers.add(jobOffer);
-            System.out.println("Job offer with the Id: " + jobOffer.getId() +" has been added successfully!");
+    public boolean persistJobOffer(String val, JobOffer jobOffer, boolean isCurrentJob) {
+        if (val.equalsIgnoreCase("yes") || val.equalsIgnoreCase("y")) {
+            if (isCurrentJob) {
+                this.currentJob = jobOffer;
+            } else {
+                this.jobOffers.add(jobOffer);
+            }
+            System.out.println("Job offer with the Id: " + jobOffer.getId() + " has been added successfully!");
+            return true;
         } else {
-            System.out.println("Job offer with the Id: " + jobOffer.getId() +" has not been added!");
+            System.out.println("Job offer with the Id: " + jobOffer.getId() + " has not been added!");
+            return false;
         }
     }
 
     public void enterJobOffer() {
         // Logic to enter a new job offer
-        // You can interact with the user to gather job offer details
-        // Create a new models.JobOffer object and add it to the jobOffers list
+        // Create a JobOffer object and add it to the jobOffers list
         JobOffer jobOffer = jobDetailsPrompt();
 
         //perhaps make this a boolean? to see if the user saved it or not, so the user can compare this SPECIFIC one with a specific ONE from the list of the arrayList
-        persistJobOffer(saveOrCancelPrompt(),jobOffer);
+        boolean isSaved = persistJobOffer(saveOrCancelPrompt(), jobOffer, false);
 
         // Next steps
         System.out.println("\nOptions (Enter a number):");
@@ -177,8 +179,11 @@ public class ComparisonService {
                 showMainMenu();
                 break;
             case 3:
-                compareJobOffers();
-                break;
+                if (isSaved && Objects.nonNull(this.currentJob)) {
+                    compareLastSavedJobWithCurrentJob(jobOffer);
+                } else {
+                    System.out.println("Either you did not save the last job offer, or the current job is not available to compare!");
+                }
             case 4:
                 System.out.println("System Ends!");
                 //TODO: Not sure?
@@ -192,11 +197,8 @@ public class ComparisonService {
     }
 
 
-
     public void adjustComparisonSettings() {
         // Logic to adjust comparison settings
-        // You can interact with the user to adjust weights in the models.ComparisonSettings object
-//         Gather comparison settings from the user
         System.out.print("Enter yearly salary weight: ");
         int yearlySalaryWeight = Integer.valueOf(scanner.nextLine());
         System.out.print("Enter yearly bonus weight: ");
@@ -221,9 +223,8 @@ public class ComparisonService {
 
     public void compareJobOffers() {
         // Logic to compare job offers
-        // You can use the JobComparisonResult class to manage the comparison
         // Display the ranked job offers to the user
-        if (jobOffers.size() < 2) {
+        if (jobOffers.size() < 2 ) {
             System.out.println("You need at least two job offers to compare.");
             return;
         }
@@ -231,6 +232,73 @@ public class ComparisonService {
         // Create a JobComparisonResult object with the list of job offers
         JobComparisonResults comparisonResult = new JobComparisonResults(jobOffers, comparisonSettings);
 
+        if(Objects.nonNull(this.currentJob)) {
+            comparisonResult.addJobOffer(this.currentJob);
+        }
+
+        // Calculate comparison scores
+        comparisonResult.compareJobsOffers();
+
+        // Get ranked job offers based on scores
+        List<JobOffer> rankedOffers = comparisonResult.getRankedJobOffers();
+
+        // Display the ranked job offers
+        System.out.println("\nRanked Job Offers:");
+        for (JobOffer offer : rankedOffers) {
+            double score = comparisonResult.getComparisonScores().get(offer);
+            System.out.println("Score: " + score + ", Title: " + offer.getJobDetails().getTitle() + ", Company: " + offer.getJobDetails().getCompany());
+
+        }
+        System.out.println("Choose an action");
+        System.out.println("1. Compare two jobs");
+        System.out.println("2. Return to main menu");
+        System.out.print("Enter: ");
+
+        int val = Integer.valueOf(scanner.nextLine());
+
+        switch (val) {
+            case 1:
+                compareJobsInDetail(comparisonResult);
+            case 2:
+                showMainMenu();
+                break;
+            default:
+                System.out.println("Invalid choice. Please try again.");
+        }
+
+
+    }
+
+    public void compareJobsInDetail(JobComparisonResults comparisonResult) {
+        System.out.println("Choose two jobs to compare in detail");
+        System.out.print("Enter the Job Id of the first job: ");
+        int choiceA = Integer.valueOf(scanner.nextLine());
+        System.out.print("Enter the Job Id of the second job: ");
+        int choiceB = Integer.valueOf(scanner.nextLine());
+
+        Optional<JobOffer> jobA = comparisonResult.getJobOffers().stream()
+                .filter(jobOffer -> jobOffer.getId()==choiceA)
+                .findFirst();
+        Optional<JobOffer> jobB = comparisonResult.getJobOffers().stream()
+                .filter(jobOffer -> jobOffer.getId()==choiceB)
+                .findFirst();
+
+        if(jobA.isPresent() && jobB.isPresent()) {
+            System.out.println();
+            System.out.println("------- First Job ----------");
+            jobA.get().printOffer(comparisonResult.getComparisonScores().get(jobA.get()));
+            System.out.println("------- Second Job ----------");
+            jobB.get().printOffer(comparisonResult.getComparisonScores().get(jobB.get()));
+        }
+        else {
+            System.out.println("Id(s) given are not present in the database, thus cannot be compared!");
+        }
+
+    }
+
+    public void compareLastSavedJobWithCurrentJob(JobOffer jobOffer) {
+        // Create a JobComparisonResult object with the list of job offers
+        JobComparisonResults comparisonResult = new JobComparisonResults(new ArrayList<>(Arrays.asList(jobOffer,this.currentJob)), comparisonSettings);
         // Calculate comparison scores
         comparisonResult.compareJobsOffers();
 
@@ -247,11 +315,18 @@ public class ComparisonService {
     }
 
     public void viewSavedJobOffers() {
-        if(this.jobOffers.isEmpty()) {
+        if (this.jobOffers.isEmpty()) {
             System.out.println("There are no job offers saved!");
-        }
-        else {
+        } else {
             this.jobOffers.stream().forEach(JobOffer::printOffer);
+        }
+    }
+
+    public void viewCurrentJobOffer() {
+        if (Objects.nonNull(this.currentJob)) {
+            this.currentJob.printOffer();
+        } else {
+            System.out.println("There is no current job saved!");
         }
     }
 
