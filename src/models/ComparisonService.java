@@ -125,7 +125,7 @@ public class ComparisonService {
 
         int count = this.jobOffers.stream().mapToInt(JobOffer::getId)
                 .max()
-                .orElse(1);
+                .orElse(0);
 
 
         JobOffer currentJobOffer = new JobOffer(count + 1, jobDetails);
@@ -184,6 +184,7 @@ public class ComparisonService {
                 } else {
                     System.out.println("Either you did not save the last job offer, or the current job is not available to compare!");
                 }
+                break;
             case 4:
                 System.out.println("System Ends!");
                 //TODO: Not sure?
