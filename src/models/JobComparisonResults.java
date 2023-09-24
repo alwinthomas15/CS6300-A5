@@ -1,28 +1,32 @@
 package models;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class JobComparisonResults {
-    public JobComparisonResults(List<JobOffer> jobOffers, Map<JobOffer, Double> comparisonScores) {
+
+    private List<JobOffer> jobOffers;
+    private Map<JobOffer, Double> comparisonScores;
+    private ComparisonSettings comparisonSettings;
+
+    public JobComparisonResults(List<JobOffer> jobOffers, Map<JobOffer, Double> comparisonScores, ComparisonSettings comparisonSettings) {
         this.jobOffers = jobOffers;
         this.comparisonScores = comparisonScores;
+        this.comparisonSettings = comparisonSettings;
+    }
+
+    public JobComparisonResults(List<JobOffer> jobOffers, ComparisonSettings comparisonSettings) {
+        this.jobOffers = jobOffers;
+        this.comparisonSettings = comparisonSettings;
+        this.comparisonScores = new HashMap<JobOffer, Double>();
     }
 
     public JobComparisonResults(List<JobOffer> jobOffers) {
         this.jobOffers = jobOffers;
     }
 
-    private List<JobOffer> jobOffers;
-    private Map<JobOffer, Double> comparisonScores;
 
-    public void compareJobs() {
-        for (JobOffer offer : jobOffers) {
-            double score = calculateScore(offer);
-            comparisonScores.put(offer, score);
-        }
+    public void addJobOffer(JobOffer jobOffer) {
+        jobOffers.add(jobOffer);
     }
 
     public List<JobOffer> getRankedJobOffers() {
@@ -31,12 +35,17 @@ public class JobComparisonResults {
         return rankedOffers;
     }
 
-    private double calculateScore(JobOffer offer) {
-        // Calculate the comparison score for a job offer based on ComparisonSettings
-        ComparisonSettings settings = new ComparisonSettings();
-        // Retrieve weight values from settings
+    public void compareJobsOffers() {
+        for (JobOffer offer : jobOffers) {
+            double score = calculateScore(offer);
+            comparisonScores.put(offer, score);
+        }
+    }
 
+    private double calculateScore(JobOffer offer) {
+        ComparisonSettings settings = this.comparisonSettings;
         JobDetails details = offer.getJobDetails();
+
         double score = (details.getYearlySalary() * settings.getYearlySalaryWeight())
                 + (details.getYearlyBonus() * settings.getYearlyBonusWeight())
                 + (details.getGymMembership() * settings.getGymMembershipWeight())
@@ -47,5 +56,27 @@ public class JobComparisonResults {
         return score;
     }
 
+    public List<JobOffer> getJobOffers() {
+        return jobOffers;
+    }
 
+    public void setJobOffers(List<JobOffer> jobOffers) {
+        this.jobOffers = jobOffers;
+    }
+
+    public Map<JobOffer, Double> getComparisonScores() {
+        return comparisonScores;
+    }
+
+    public void setComparisonScores(Map<JobOffer, Double> comparisonScores) {
+        this.comparisonScores = comparisonScores;
+    }
+
+    public ComparisonSettings getComparisonSettings() {
+        return comparisonSettings;
+    }
+
+    public void setComparisonSettings(ComparisonSettings comparisonSettings) {
+        this.comparisonSettings = comparisonSettings;
+    }
 }

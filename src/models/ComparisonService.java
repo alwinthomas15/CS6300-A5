@@ -62,6 +62,46 @@ public class ComparisonService {
         }
     }
 
+    public void enterOrEditJobDetails() {
+        // Create JobDetails and JobOffer objects
+        if(!this.jobOffers.isEmpty()) {
+            JobOffer editJobOffer = null;
+            //Display existing Job offers and let users select a specific offer to edit the details
+            this.jobOffers.stream().forEach(JobOffer::printOffer);
+            System.out.println("=============================");
+            System.out.println("Enter 0 to return to main menu");
+            System.out.println("Enter the ID of the Job Offer to edit it further: ");
+            System.out.print("Enter: ");
+            int choice = Integer.valueOf(scanner.nextLine());
+
+            Optional<JobOffer> result = this.jobOffers.stream()
+                    .filter(jobOffer -> jobOffer.getId()==choice)
+                    .findFirst();
+
+            if(result.isPresent()) {
+                editJobOffer = result.get();
+
+                System.out.println(" The job offer you selected is: ");
+                editJobOffer.printOffer();
+                System.out.println("=======================");
+                System.out.println("Enter new details for the Job Id of: " + editJobOffer.getId());
+
+                JobOffer newJobOffer = jobDetailsPrompt();
+                newJobOffer.setId(choice);
+                persistJobOffer(saveOrCancelPrompt(),newJobOffer);
+            } else {
+                System.out.println("The Job Offer for Id: " + choice + " cannot be found in the database!");
+            }
+
+        }
+        else {
+            //Prompt users to enter new job details of an offer
+            System.out.println("There are no job offers present, please enter details for the job!");
+            JobOffer jobOffer = jobDetailsPrompt();
+            persistJobOffer(saveOrCancelPrompt(),jobOffer);
+        }
+    }
+
     public JobOffer jobDetailsPrompt() {
         // Gather job details from the user
         System.out.print("Enter job title: ");
@@ -96,50 +136,6 @@ public class ComparisonService {
         return currentJobOffer;
     }
 
-    public void enterOrEditJobDetails() {
-        // Create JobDetails and JobOffer objects
-        if(!this.jobOffers.isEmpty()) {
-            JobOffer editJobOffer = null;
-            //Display existing Job offers and let users select a specific offer to edit the details
-            this.jobOffers.stream().forEach(JobOffer::printOffer);
-            System.out.println("=============================");
-            System.out.println("Enter 0 to return to main menu");
-            System.out.println("Enter the ID of the Job Offer to edit it further: ");
-            System.out.print("Enter: ");
-            int choice = Integer.valueOf(scanner.nextLine());
-
-            Optional<JobOffer> result = this.jobOffers.stream()
-                    .filter(jobOffer -> jobOffer.getId()==choice)
-                    .findFirst();
-
-            if(result.isPresent()) {
-               editJobOffer = result.get();
-
-                System.out.println(" The job offer you selected is: ");
-                editJobOffer.printOffer();
-                System.out.println("=======================");
-                System.out.println("Enter new details for the Job Id of: " + editJobOffer.getId());
-
-                JobOffer newJobOffer = jobDetailsPrompt();
-                newJobOffer.setId(choice);
-                persistJobOffer(saveOrCancelPrompt(),newJobOffer);
-            } else {
-                System.out.println("The Job Offer for Id: " + choice + " cannot be found in the database!");
-            }
-
-        }
-        else {
-            //Prompt users to enter new job details of an offer
-            System.out.println("There are no job offers present, please enter details for the job!");
-            JobOffer jobOffer = jobDetailsPrompt();
-            persistJobOffer(saveOrCancelPrompt(),jobOffer);
-        }
-    }
-
-    public void editCurrentJob() {
-
-    }
-
     public String saveOrCancelPrompt() {
         System.out.print("Do you want to save this job offer? (Enter 'Yes' or 'No'): ");
         return scanner.nextLine();
@@ -153,14 +149,6 @@ public class ComparisonService {
         } else {
             System.out.println("Job offer with the Id: " + jobOffer.getId() +" has not been added!");
         }
-    }
-
-    public boolean enterOrEditCurrentJob(JobOffer jobOffer) {
-        // Logic to enter or edit current job details
-        // You can add validation and error handling here
-        // Update the jobOffers list with the provided job offer
-        this.jobOffers.add(jobOffer);
-        return true; // For simplicity, assume success
     }
 
     public void enterJobOffer() {
@@ -179,9 +167,9 @@ public class ComparisonService {
         System.out.println("3. Compare offer (if saved)");
         System.out.println("4. Exit");
 
-//        int number = scanner.nextInt();
+        int val = Integer.valueOf(scanner.nextLine());
 
-        switch (1) {
+        switch (val) {
             case 1:
                 enterJobOffer();
                 break;
@@ -218,18 +206,16 @@ public class ComparisonService {
         System.out.print("Enter leave time weight: ");
         int leaveTimeWeight = Integer.valueOf(scanner.nextLine());
         System.out.print("Enter 401K match weight: ");
-        int _401kMatchWeight = Integer.valueOf(scanner.nextLine());
+        int retirementMatch = Integer.valueOf(scanner.nextLine());
         System.out.print("Enter pet insurance weight: ");
         int petInsuranceWeight = Integer.valueOf(scanner.nextLine());
 
-        // Update the comparison settings
         comparisonSettings.setYearlySalaryWeight(yearlySalaryWeight);
         comparisonSettings.setYearlyBonusWeight(yearlyBonusWeight);
         comparisonSettings.setGymMembershipWeight(gymMembershipWeight);
         comparisonSettings.setLeaveTimeWeight(leaveTimeWeight);
-        comparisonSettings.setRetirementMatch(_401kMatchWeight);
+        comparisonSettings.setRetirementMatch(retirementMatch);
         comparisonSettings.setPetInsuranceWeight(petInsuranceWeight);
-
         System.out.println("Comparison settings updated successfully.");
     }
 
@@ -243,20 +229,20 @@ public class ComparisonService {
         }
 
         // Create a JobComparisonResult object with the list of job offers
-        JobComparisonResults comparisonResult = new JobComparisonResults(jobOffers);
+        JobComparisonResults comparisonResult = new JobComparisonResults(jobOffers, comparisonSettings);
 
         // Calculate comparison scores
-        comparisonResult.compareJobs();
+        comparisonResult.compareJobsOffers();
 
         // Get ranked job offers based on scores
         List<JobOffer> rankedOffers = comparisonResult.getRankedJobOffers();
 
         // Display the ranked job offers
         System.out.println("\nRanked Job Offers:");
-        int rank = 1;
         for (JobOffer offer : rankedOffers) {
-            System.out.println("Rank " + rank + ": " + offer.getJobDetails().getTitle() + " at " + offer.getJobDetails().getCompany());
-            rank++;
+            double score = comparisonResult.getComparisonScores().get(offer);
+            System.out.println("Score: " + score + ", Title: " + offer.getJobDetails().getTitle() + ", Company: " + offer.getJobDetails().getCompany());
+
         }
     }
 
