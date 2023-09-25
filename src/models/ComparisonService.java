@@ -96,7 +96,7 @@ public class ComparisonService {
     public void editCurrentJob() {
         JobOffer editedCurrentJob = jobDetailsPrompt();
         editedCurrentJob.setId(0);
-        this.currentJob = editedCurrentJob;
+        persistJobOffer(saveOrCancelPrompt(),editedCurrentJob,true);
     }
 
     public JobOffer jobDetailsPrompt() {
@@ -173,12 +173,14 @@ public class ComparisonService {
 
         switch (val) {
             case 1:
+                //Loops back to this
                 enterJobOffer();
                 break;
             case 2:
                 showMainMenu();
                 break;
             case 3:
+                //Exits back to main menu
                 if (isSaved && Objects.nonNull(this.currentJob)) {
                     compareLastSavedJobWithCurrentJob(jobOffer);
                 } else {
