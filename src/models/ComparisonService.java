@@ -5,14 +5,12 @@ import java.util.*;
 public class ComparisonService {
 
     private List<JobOffer> jobOffers;
-    private List<JobComparisonResults> comparisonResults;
     private ComparisonSettings comparisonSettings;
     private JobOffer currentJob;
     private Scanner scanner;
 
     public ComparisonService() {
         this.jobOffers = new ArrayList<>();
-        this.comparisonResults = new ArrayList<>();
         this.comparisonSettings = new ComparisonSettings();
         this.scanner = new Scanner(System.in);
     }
@@ -240,7 +238,7 @@ public class ComparisonService {
         }
 
         // Calculate comparison scores
-        comparisonResult.compareJobsOffers();
+        comparisonResult.compareJobOffers();
 
         // Get ranked job offers based on scores
         List<JobOffer> rankedOffers = comparisonResult.getRankedJobOffers();
@@ -303,7 +301,7 @@ public class ComparisonService {
         // Create a JobComparisonResult object with the list of job offers
         JobComparisonResults comparisonResult = new JobComparisonResults(new ArrayList<>(Arrays.asList(jobOffer,this.currentJob)), comparisonSettings);
         // Calculate comparison scores
-        comparisonResult.compareJobsOffers();
+        comparisonResult.compareJobOffers();
 
         // Get ranked job offers based on scores
         List<JobOffer> rankedOffers = comparisonResult.getRankedJobOffers();

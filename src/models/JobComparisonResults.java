@@ -35,7 +35,7 @@ public class JobComparisonResults {
         return rankedOffers;
     }
 
-    public void compareJobsOffers() {
+    public void compareJobOffers() {
         for (JobOffer offer : jobOffers) {
             double score = calculateScore(offer);
             comparisonScores.put(offer, score);
